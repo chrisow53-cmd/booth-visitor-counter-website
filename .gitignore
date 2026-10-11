@@ -1,0 +1,28 @@
+# Video files
+*.mp4
+*.avi
+
+# Python and AI Models
+__pycache__/
+*.pt
+*.onnx
+
+# Node.js and Website
+node_modules/
+.env
+
+# Build outputs & caches
+dist/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Databases
+*.db
+*.sqlite
+
+# OS & Editor
+.DS_Store
+Thumbs.db
