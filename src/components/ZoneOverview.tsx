@@ -25,7 +25,7 @@ export const ZoneOverview: React.FC<ZoneOverviewProps> = ({ latestZones, staffCo
         <div>
           <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
             <Users className="w-5 h-5 text-indigo-400" />
-            Physical Table Zones (Live Status)
+            Physical Table Zones (Occupancy Overview)
           </h2>
           <p className="text-xs text-slate-400">15-minute edge telemetry across 4 physical zones</p>
         </div>

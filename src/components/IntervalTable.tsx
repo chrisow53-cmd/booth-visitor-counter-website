@@ -85,7 +85,7 @@ export const IntervalTable: React.FC<IntervalTableProps> = ({ telemetry, staffCo
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             className="flex items-center gap-1 hover:text-white transition font-semibold"
           >
-            Live Headcount
+            Headcount
             <ArrowUpDown className="w-3 h-3" />
           </button>
         ),

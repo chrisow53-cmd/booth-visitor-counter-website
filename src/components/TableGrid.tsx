@@ -7,6 +7,7 @@ interface TableGridProps {
   summaries: ShiftSummary[];
   loading?: boolean;
   onSelectShift: (shiftDate: string, shiftId: number) => void;
+  showDemographics?: boolean;
 }
 
 interface SliceInfo {
@@ -111,7 +112,12 @@ const MiniPieChart: React.FC<MiniPieChartProps> = ({ sliceA, sliceB, size = 54 }
   );
 };
 
-export const TableGrid: React.FC<TableGridProps> = ({ summaries, loading, onSelectShift }) => {
+export const TableGrid: React.FC<TableGridProps> = ({
+  summaries,
+  loading,
+  onSelectShift,
+  showDemographics = true
+}) => {
   const shiftBlocks = useMemo(() => {
     const sorted = [...summaries].sort((a, b) => {
       const dateDiff = new Date(a.shift_date).getTime() - new Date(b.shift_date).getTime();
@@ -249,67 +255,69 @@ export const TableGrid: React.FC<TableGridProps> = ({ summaries, loading, onSele
               </div>
 
               {/* Demographics Breakdown: Gender & Age Pie Charts */}
-              <div className="pt-3 border-t border-slate-800/60">
-                <div className="grid grid-cols-2 gap-2.5">
-                  
-                  {/* Gender Pie Chart Box */}
-                  <div className="bg-slate-950/40 rounded-xl p-2.5 border border-slate-800/50 flex flex-col items-center">
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      Gender
-                    </span>
-                    <MiniPieChart
-                      sliceA={{ label: 'Male', value: male, color: '#3b82f6' }}
-                      sliceB={{ label: 'Female', value: female, color: '#ec4899' }}
-                      size={52}
-                    />
-                    <div className="w-full space-y-1 text-[10px] font-mono mt-2 pt-1 border-t border-slate-800/40">
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-1.5 text-blue-400 font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-                          M: {male.toLocaleString()}
-                        </span>
-                        <span className="text-slate-400">{malePct}%</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-1.5 text-pink-400 font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
-                          F: {female.toLocaleString()}
-                        </span>
-                        <span className="text-slate-400">{femalePct}%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Age Pie Chart Box */}
-                  <div className="bg-slate-950/40 rounded-xl p-2.5 border border-slate-800/50 flex flex-col items-center">
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      Age
-                    </span>
-                    <MiniPieChart
-                      sliceA={{ label: 'Adult', value: adult, color: '#10b981' }}
-                      sliceB={{ label: 'Kid', value: kid, color: '#f59e0b' }}
-                      size={52}
-                    />
-                    <div className="w-full space-y-1 text-[10px] font-mono mt-2 pt-1 border-t border-slate-800/40">
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                          Adult: {adult.toLocaleString()}
-                        </span>
-                        <span className="text-slate-400">{adultPct}%</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-1.5 text-amber-400 font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                          Kid: {kid.toLocaleString()}
-                        </span>
-                        <span className="text-slate-400">{kidPct}%</span>
+              {showDemographics && (
+                <div className="pt-3 border-t border-slate-800/60">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    
+                    {/* Gender Pie Chart Box */}
+                    <div className="bg-slate-950/40 rounded-xl p-2.5 border border-slate-800/50 flex flex-col items-center">
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                        Gender
+                      </span>
+                      <MiniPieChart
+                        sliceA={{ label: 'Male', value: male, color: '#3b82f6' }}
+                        sliceB={{ label: 'Female', value: female, color: '#ec4899' }}
+                        size={52}
+                      />
+                      <div className="w-full space-y-1 text-[10px] font-mono mt-2 pt-1 border-t border-slate-800/40">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-blue-400 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                            M: {male.toLocaleString()}
+                          </span>
+                          <span className="text-slate-400">{malePct}%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-pink-400 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
+                            F: {female.toLocaleString()}
+                          </span>
+                          <span className="text-slate-400">{femalePct}%</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
+                    {/* Age Pie Chart Box */}
+                    <div className="bg-slate-950/40 rounded-xl p-2.5 border border-slate-800/50 flex flex-col items-center">
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                        Age
+                      </span>
+                      <MiniPieChart
+                        sliceA={{ label: 'Adult', value: adult, color: '#10b981' }}
+                        sliceB={{ label: 'Kid', value: kid, color: '#f59e0b' }}
+                        size={52}
+                      />
+                      <div className="w-full space-y-1 text-[10px] font-mono mt-2 pt-1 border-t border-slate-800/40">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            Adult: {adult.toLocaleString()}
+                          </span>
+                          <span className="text-slate-400">{adultPct}%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-amber-400 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                            Kid: {kid.toLocaleString()}
+                          </span>
+                          <span className="text-slate-400">{kidPct}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
-              </div>
+              )}
 
             </div>
           );

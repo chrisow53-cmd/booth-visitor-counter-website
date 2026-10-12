@@ -6,9 +6,14 @@ import { Users, Clock, UserCheck, Baby, Loader2 } from 'lucide-react';
 interface GlobalTotalsHeaderProps {
   summaries: ShiftSummary[];
   loading?: boolean;
+  showDemographics?: boolean;
 }
 
-export const GlobalTotalsHeader: React.FC<GlobalTotalsHeaderProps> = ({ summaries, loading }) => {
+export const GlobalTotalsHeader: React.FC<GlobalTotalsHeaderProps> = ({
+  summaries,
+  loading,
+  showDemographics = true
+}) => {
   if (loading && summaries.length === 0) {
     return (
       <section className="mt-8 pt-8 border-t border-slate-800/80">
@@ -73,7 +78,7 @@ export const GlobalTotalsHeader: React.FC<GlobalTotalsHeaderProps> = ({ summarie
         <span className="text-xs text-slate-500 font-mono">Aggregated from {shiftCount} active shifts</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className={`grid grid-cols-1 ${showDemographics ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2'} gap-5`}>
         
         {/* Total Visitors */}
         <div className="bg-slate-900/50 backdrop-blur-md rounded-2xl p-6 border border-slate-800/80 shadow-sm hover:border-slate-700/80 transition-all">
@@ -104,41 +109,45 @@ export const GlobalTotalsHeader: React.FC<GlobalTotalsHeaderProps> = ({ summarie
           <p className="text-xs text-slate-500 mt-2">Average visitor duration</p>
         </div>
 
-        {/* Male vs. Female Ratio */}
-        <div className="bg-slate-900/50 backdrop-blur-md rounded-2xl p-6 border border-slate-800/80 shadow-sm hover:border-slate-700/80 transition-all">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Male vs Female</span>
-            <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              <UserCheck className="w-5 h-5" />
+        {showDemographics && (
+          <>
+            {/* Male vs. Female Ratio */}
+            <div className="bg-slate-900/50 backdrop-blur-md rounded-2xl p-6 border border-slate-800/80 shadow-sm hover:border-slate-700/80 transition-all">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Male vs Female</span>
+                <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="flex items-baseline justify-between mb-3">
+                <span className="text-2xl font-bold text-slate-100">{malePct}% <span className="text-xs text-blue-400 font-normal">({totalMale.toLocaleString()})</span></span>
+                <span className="text-2xl font-bold text-slate-100">{femalePct}% <span className="text-xs text-pink-400 font-normal">({totalFemale.toLocaleString()})</span></span>
+              </div>
+              <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex">
+                <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${malePct}%` }} />
+                <div className="bg-pink-500 h-full transition-all duration-500" style={{ width: `${femalePct}%` }} />
+              </div>
             </div>
-          </div>
-          <div className="flex items-baseline justify-between mb-3">
-            <span className="text-2xl font-bold text-slate-100">{malePct}% <span className="text-xs text-blue-400 font-normal">({totalMale.toLocaleString()})</span></span>
-            <span className="text-2xl font-bold text-slate-100">{femalePct}% <span className="text-xs text-pink-400 font-normal">({totalFemale.toLocaleString()})</span></span>
-          </div>
-          <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex">
-            <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${malePct}%` }} />
-            <div className="bg-pink-500 h-full transition-all duration-500" style={{ width: `${femalePct}%` }} />
-          </div>
-        </div>
 
-        {/* Adult vs. Kid Ratio */}
-        <div className="bg-slate-900/50 backdrop-blur-md rounded-2xl p-6 border border-slate-800/80 shadow-sm hover:border-slate-700/80 transition-all">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Adult vs Kid</span>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <Baby className="w-5 h-5" />
+            {/* Adult vs. Kid Ratio */}
+            <div className="bg-slate-900/50 backdrop-blur-md rounded-2xl p-6 border border-slate-800/80 shadow-sm hover:border-slate-700/80 transition-all">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Adult vs Kid</span>
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <Baby className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="flex items-baseline justify-between mb-3">
+                <span className="text-2xl font-bold text-slate-100">{adultPct}% <span className="text-xs text-emerald-400 font-normal">({totalAdult.toLocaleString()})</span></span>
+                <span className="text-2xl font-bold text-slate-100">{kidPct}% <span className="text-xs text-amber-400 font-normal">({totalKid.toLocaleString()})</span></span>
+              </div>
+              <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex">
+                <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${adultPct}%` }} />
+                <div className="bg-amber-500 h-full transition-all duration-500" style={{ width: `${kidPct}%` }} />
+              </div>
             </div>
-          </div>
-          <div className="flex items-baseline justify-between mb-3">
-            <span className="text-2xl font-bold text-slate-100">{adultPct}% <span className="text-xs text-emerald-400 font-normal">({totalAdult.toLocaleString()})</span></span>
-            <span className="text-2xl font-bold text-slate-100">{kidPct}% <span className="text-xs text-amber-400 font-normal">({totalKid.toLocaleString()})</span></span>
-          </div>
-          <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex">
-            <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${adultPct}%` }} />
-            <div className="bg-amber-500 h-full transition-all duration-500" style={{ width: `${kidPct}%` }} />
-          </div>
-        </div>
+          </>
+        )}
 
       </div>
     </section>

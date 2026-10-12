@@ -29,6 +29,7 @@ export function App() {
 
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [selectedShift, setSelectedShift] = useState<{ date: string; shiftId: number } | null>(null);
+  const [showDemographics, setShowDemographics] = useState<boolean>(true);
 
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
@@ -41,6 +42,8 @@ export function App() {
         onRefresh={fetchData}
         staffConfig={staffConfig}
         onOpenStaffModal={() => setIsStaffModalOpen(true)}
+        showDemographics={showDemographics}
+        onToggleDemographics={() => setShowDemographics((prev) => !prev)}
       />
 
       {/* Main Content Area */}
@@ -70,12 +73,14 @@ export function App() {
           summaries={summaries}
           loading={loading}
           onSelectShift={(date, shiftId) => setSelectedShift({ date, shiftId })}
+          showDemographics={showDemographics}
         />
 
         {/* 2. Global Totals Summary Cards */}
         <GlobalTotalsHeader
           summaries={summaries}
           loading={loading}
+          showDemographics={showDemographics}
         />
 
       </main>
@@ -103,6 +108,7 @@ export function App() {
         shiftDate={selectedShift?.date ?? null}
         shiftId={selectedShift?.shiftId ?? null}
         staffConfig={staffConfig}
+        showDemographics={showDemographics}
       />
 
     </div>

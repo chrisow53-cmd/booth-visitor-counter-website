@@ -9,6 +9,7 @@ interface VisitorDetailModalProps {
   shiftDate: string | null;
   shiftId: number | null;
   staffConfig: StaffConfig;
+  showDemographics?: boolean;
 }
 
 export const VisitorDetailModal: React.FC<VisitorDetailModalProps> = ({
@@ -16,6 +17,7 @@ export const VisitorDetailModal: React.FC<VisitorDetailModalProps> = ({
   onClose,
   shiftDate,
   shiftId,
+  showDemographics = true
 }) => {
   const [visitors, setVisitors] = useState<VisitorSession[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -143,8 +145,12 @@ export const VisitorDetailModal: React.FC<VisitorDetailModalProps> = ({
                     <th className="px-4 py-3 font-semibold">Entry Time</th>
                     <th className="px-4 py-3 font-semibold">Exit Time</th>
                     <th className="px-4 py-3 font-semibold">Dwell Time</th>
-                    <th className="px-4 py-3 font-semibold">Gender</th>
-                    <th className="px-4 py-3 font-semibold">Age Group</th>
+                    {showDemographics && (
+                      <>
+                        <th className="px-4 py-3 font-semibold">Gender</th>
+                        <th className="px-4 py-3 font-semibold">Age Group</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 text-xs">
@@ -162,30 +168,34 @@ export const VisitorDetailModal: React.FC<VisitorDetailModalProps> = ({
                       <td className="px-4 py-2.5 font-mono text-amber-300 font-semibold">
                         {formatDwellTime(v.dwell_time)}
                       </td>
-                      <td className="px-4 py-2.5">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border ${
-                            v.gender === 'M'
-                              ? 'bg-blue-500/10 text-blue-300 border-blue-500/30'
-                              : 'bg-pink-500/10 text-pink-300 border-pink-500/30'
-                          }`}
-                        >
-                          <User className="w-3 h-3" />
-                          {v.gender === 'M' ? 'Male' : 'Female'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border ${
-                            v.age_group === 'Adult'
-                              ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-                              : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
-                          }`}
-                        >
-                          {v.age_group === 'Kid' && <Baby className="w-3 h-3" />}
-                          {v.age_group}
-                        </span>
-                      </td>
+                      {showDemographics && (
+                        <>
+                          <td className="px-4 py-2.5">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border ${
+                                v.gender === 'M'
+                                  ? 'bg-blue-500/10 text-blue-300 border-blue-500/30'
+                                  : 'bg-pink-500/10 text-pink-300 border-pink-500/30'
+                              }`}
+                            >
+                              <User className="w-3 h-3" />
+                              {v.gender === 'M' ? 'Male' : 'Female'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border ${
+                                v.age_group === 'Adult'
+                                  ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                                  : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                              }`}
+                            >
+                              {v.age_group === 'Kid' && <Baby className="w-3 h-3" />}
+                              {v.age_group}
+                            </span>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>

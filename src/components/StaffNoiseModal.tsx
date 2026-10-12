@@ -77,7 +77,7 @@ export const StaffNoiseModal: React.FC<StaffNoiseModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-white">Staff Baseline Noise Filter</h3>
-              <p className="text-xs text-slate-400">Deduct baseline staff counts from live table metrics</p>
+              <p className="text-xs text-slate-400">Deduct baseline staff counts from table metrics</p>
             </div>
           </div>
           
@@ -98,8 +98,8 @@ export const StaffNoiseModal: React.FC<StaffNoiseModalProps> = ({
           <div className="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/20 flex items-start gap-3 text-xs text-indigo-200">
             <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
             <span>
-              Stationed staff (e.g. 4-5 per table) can skew live headcount metrics.
-              Adjust deductions below to subtract staff counts from live edge visitor data.
+              Stationed staff (e.g. 4-5 per table) can skew headcount metrics.
+              Adjust deductions below to subtract staff counts from visitor data.
             </span>
           </div>
 
