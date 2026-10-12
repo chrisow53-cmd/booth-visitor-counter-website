@@ -5,14 +5,15 @@ import { GlobalTotalsHeader } from './components/GlobalTotalsHeader';
 import { TableGrid } from './components/TableGrid';
 import { StaffNoiseModal } from './components/StaffNoiseModal';
 import { VisitorDetailModal } from './components/VisitorDetailModal';
+import { ErrorPage } from './components/ErrorPage';
 import { StaffConfig } from './types/telemetry';
-import { AlertTriangle } from 'lucide-react';
 
 export function App() {
   const {
     summaries,
     loading,
     error,
+    setError,
     lastRefreshed,
     autoRefresh,
     setAutoRefresh,
@@ -30,6 +31,30 @@ export function App() {
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [selectedShift, setSelectedShift] = useState<{ date: string; shiftId: number } | null>(null);
   const [showDemographics, setShowDemographics] = useState<boolean>(true);
+  const [viewCachedData, setViewCachedData] = useState<boolean>(false);
+
+  // Dedicated Error Page when an issue/connection failure occurs
+  if (error && !viewCachedData) {
+    const errorWithActions = {
+      ...error,
+      retryAction: error.retryAction || (async () => {
+        setViewCachedData(false);
+        await fetchData();
+      }),
+      recoverAction: error.recoverAction || (summaries.length > 0 ? () => setViewCachedData(true) : undefined),
+      recoverLabel: error.recoverLabel || (summaries.length > 0 ? 'View Cached Shift Data' : undefined),
+    };
+
+    return (
+      <ErrorPage
+        error={errorWithActions}
+        onClearError={() => {
+          setError(null);
+          setViewCachedData(false);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
@@ -39,7 +64,10 @@ export function App() {
         lastRefreshed={lastRefreshed}
         autoRefresh={autoRefresh}
         setAutoRefresh={setAutoRefresh}
-        onRefresh={fetchData}
+        onRefresh={() => {
+          setViewCachedData(false);
+          fetchData();
+        }}
         staffConfig={staffConfig}
         onOpenStaffModal={() => setIsStaffModalOpen(true)}
         showDemographics={showDemographics}
@@ -48,25 +76,6 @@ export function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-16 pt-6">
-        
-        {/* Error Alert Banner if connection fails */}
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-950/50 border border-red-500/30 text-red-200 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
-              <div>
-                <h4 className="text-sm font-semibold">Server Connection Issue</h4>
-                <p className="text-xs text-red-300/80">{error}</p>
-              </div>
-            </div>
-            <button
-              onClick={fetchData}
-              className="px-3 py-1.5 text-xs font-semibold bg-red-800 hover:bg-red-700 text-white rounded-lg transition"
-            >
-              Retry Connection
-            </button>
-          </div>
-        )}
 
         {/* 1. 4-Day Event Shift Occupancy Grid (8 Shift Cards) */}
         <TableGrid
@@ -109,6 +118,7 @@ export function App() {
         shiftId={selectedShift?.shiftId ?? null}
         staffConfig={staffConfig}
         showDemographics={showDemographics}
+        onError={setError}
       />
 
     </div>

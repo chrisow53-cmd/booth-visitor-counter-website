@@ -1,29 +1,41 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ShiftSummary } from '../types/telemetry';
+import { AppError } from '../types/error';
 
 export function useTelemetry() {
   const [summaries, setSummaries] = useState<ShiftSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
 
       const resSummary = await fetch('/api/shifts/summary');
       if (!resSummary.ok) {
-        throw new Error('Failed to fetch shift summary from edge server');
+        throw new Error(`Server returned HTTP ${resSummary.status}: ${resSummary.statusText || 'Failed to fetch shift summary'}`);
       }
 
       const summaryData = await resSummary.json();
       setSummaries(summaryData.data || []);
       setLastRefreshed(new Date());
+      setError(null);
     } catch (err: any) {
       console.error('[useTelemetry error]:', err);
-      setError(err.message || 'Error connecting to API server');
+      const isNetwork = err.message?.includes('Failed to fetch') || err.name === 'TypeError';
+      const appErr: AppError = {
+        category: isNetwork ? 'network' : 'server',
+        title: isNetwork ? 'Unable to Connect to Visitor Telemetry Server' : 'Telemetry API Service Error',
+        message: isNetwork
+          ? 'The browser was unable to establish a connection to the visitor tracking backend service at http://localhost:3001. The server may be offline or restarting.'
+          : (err.message || 'An unexpected error occurred while communicating with the database.'),
+        endpoint: '/api/shifts/summary',
+        details: err.stack || err.message || 'Unknown network error',
+        timestamp: new Date().toISOString(),
+      };
+      setError(appErr);
     } finally {
       setLoading(false);
     }
@@ -56,6 +68,7 @@ export function useTelemetry() {
     summaries,
     loading,
     error,
+    setError,
     lastRefreshed,
     autoRefresh,
     setAutoRefresh,

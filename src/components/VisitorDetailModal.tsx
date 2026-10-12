@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { VisitorSession, StaffConfig } from '../types/telemetry';
+import { AppError } from '../types/error';
 import { formatDwellTime, formatIsoTime } from '../utils/aggregations';
 import { X, Search, Clock, Users, User, Baby, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 
@@ -10,6 +11,7 @@ interface VisitorDetailModalProps {
   shiftId: number | null;
   staffConfig: StaffConfig;
   showDemographics?: boolean;
+  onError?: (error: AppError) => void;
 }
 
 export const VisitorDetailModal: React.FC<VisitorDetailModalProps> = ({
@@ -17,7 +19,8 @@ export const VisitorDetailModal: React.FC<VisitorDetailModalProps> = ({
   onClose,
   shiftDate,
   shiftId,
-  showDemographics = true
+  showDemographics = true,
+  onError
 }) => {
   const [visitors, setVisitors] = useState<VisitorSession[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -38,21 +41,41 @@ export const VisitorDetailModal: React.FC<VisitorDetailModalProps> = ({
 
         const res = await fetch(`/api/shifts/${shiftDate}/${shiftId}/visitors`);
         if (!res.ok) {
-          throw new Error('Failed to load visitor sessions for this shift');
+          throw new Error(`Server returned HTTP ${res.status}: Failed to load visitor sessions for this shift`);
         }
 
         const data = await res.json();
         setVisitors(data.data || []);
       } catch (err: any) {
         console.error('[VisitorDetailModal error]:', err);
-        setError(err.message || 'Error fetching visitor session data');
+        const isNetwork = err.message?.includes('Failed to fetch') || err.name === 'TypeError';
+        const appErr: AppError = {
+          category: isNetwork ? 'network' : 'server',
+          title: `Unable to Retrieve Shift ${shiftId} Visitors (${shiftDate})`,
+          message: isNetwork
+            ? `Connection to the visitor tracking service was lost while loading detailed session records for Shift ${shiftId}.`
+            : (err.message || 'Error occurred while loading detailed visitor logs.'),
+          endpoint: `/api/shifts/${shiftDate}/${shiftId}/visitors`,
+          details: err.stack || err.message,
+          timestamp: new Date().toISOString(),
+          retryAction: () => fetchVisitors(),
+          recoverAction: onClose,
+          recoverLabel: 'Return to Shift Grid',
+        };
+
+        if (onError) {
+          onClose();
+          onError(appErr);
+        } else {
+          setError(err.message || 'Error fetching visitor session data');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchVisitors();
-  }, [isOpen, shiftDate, shiftId]);
+  }, [isOpen, shiftDate, shiftId, onClose, onError]);
 
   const filteredVisitors = useMemo(() => {
     if (!searchQuery.trim()) return visitors;
