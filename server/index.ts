@@ -3,6 +3,7 @@ import cors from 'cors';
 import { initDatabase } from './db.js';
 import { seedDatabase } from './seeder.js';
 import { metricsRouter } from './routes/metrics.js';
+import { campaignRouter } from './routes/campaign.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,6 +17,7 @@ seedDatabase(false);
 
 // API Routes
 app.use('/api', metricsRouter);
+app.use('/api', campaignRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

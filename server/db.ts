@@ -20,6 +20,30 @@ export function initDatabase() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_sessions_shift ON visitor_sessions(shift_date, shift_id);
+
+    CREATE TABLE IF NOT EXISTS campaign_settings (
+      id INTEGER PRIMARY KEY CHECK(id = 1),
+      client_name TEXT NOT NULL,
+      campaign_name TEXT NOT NULL,
+      location TEXT NOT NULL,
+      space_size_sqm REAL NOT NULL,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    INSERT OR IGNORE INTO campaign_settings (
+      id, client_name, campaign_name, location, space_size_sqm, start_date, end_date, updated_at
+    ) VALUES (
+      1,
+      'CARCHING Global',
+      '4-Day Automotive Offline Exhibition',
+      'Mid Valley Exhibition Centre (Hall 1)',
+      250.0,
+      '2026-10-03',
+      '2026-10-06',
+      datetime('now')
+    );
   `);
 
   console.log('[SQLite] Database initialized at:', DB_PATH);

@@ -1,12 +1,15 @@
 import React, { useMemo } from 'react';
 import { ShiftSummary } from '../types/telemetry';
 import { formatDwellTime } from '../utils/aggregations';
-import { Users, Clock, Loader2, Calendar } from 'lucide-react';
+import { Users, Clock, Loader2, Calendar, Check, Eye, Layers, Filter, X } from 'lucide-react';
 
 interface TableGridProps {
   summaries: ShiftSummary[];
   loading?: boolean;
-  onSelectShift: (shiftDate: string, shiftId: number) => void;
+  selectedShiftKeys: string[];
+  onToggleShiftSelection: (shiftDate: string, shiftId: number) => void;
+  onSelectPreset?: (preset: 'all' | 'clear' | 'day1' | 'day2' | 'day3' | 'day4' | 'shift1' | 'shift2') => void;
+  onInspectShift: (shiftDate: string, shiftId: number) => void;
   showDemographics?: boolean;
 }
 
@@ -115,7 +118,10 @@ const MiniPieChart: React.FC<MiniPieChartProps> = ({ sliceA, sliceB, size = 54 }
 export const TableGrid: React.FC<TableGridProps> = ({
   summaries,
   loading,
-  onSelectShift,
+  selectedShiftKeys,
+  onToggleShiftSelection,
+  onSelectPreset,
+  onInspectShift,
   showDemographics = true
 }) => {
   const shiftBlocks = useMemo(() => {
@@ -129,8 +135,11 @@ export const TableGrid: React.FC<TableGridProps> = ({
 
     return sorted.map((s) => {
       const dayIndex = uniqueDates.indexOf(s.shift_date) + 1;
+      const key = `${s.shift_date}_${s.shift_id}`;
       return {
         ...s,
+        key,
+        dayNumber: dayIndex,
         dayLabel: dayIndex > 0 ? `Day ${dayIndex}` : 'Event Day',
       };
     });
@@ -173,24 +182,97 @@ export const TableGrid: React.FC<TableGridProps> = ({
     );
   }
 
+  const selectedCount = selectedShiftKeys.length;
+
   return (
     <section className="mb-8">
-      <div className="flex items-center justify-between mb-5">
+      {/* Selection Control & Presets Toolbar */}
+      <div className="mb-6 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-lg backdrop-blur-sm">
         <div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            4-Day Event Shift Occupancy
-          </h2>
-          <p className="text-xs text-slate-500">Click any card to view detailed individual visitor sessions</p>
+          <div className="flex items-center gap-3">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+              <Layers className="w-4 h-4 text-indigo-400" />
+              4-Day Event Shift Occupancy
+            </h2>
+            <span
+              className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border transition-all flex items-center gap-1.5 ${
+                selectedCount > 0
+                  ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/40 shadow-sm'
+                  : 'bg-slate-800/60 text-slate-400 border-slate-700/60'
+              }`}
+            >
+              <Calendar className="w-3 h-3 text-indigo-400" />
+              {selectedCount > 0
+                ? `${selectedCount} of ${shiftBlocks.length} Shifts Selected`
+                : `All ${shiftBlocks.length} Shifts in Default Total`}
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 mt-1">
+            Click cards or toggle checkboxes to calculate a custom <strong className="text-slate-200">Selected Shifts Aggregate</strong> total below.
+          </p>
         </div>
-        <span className="text-xs font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5" />
-          {shiftBlocks.length} / 8 Shifts Active
-        </span>
+
+        {/* Quick Presets Bar */}
+        <div className="flex flex-wrap items-center gap-1.5 w-full lg:w-auto">
+          <span className="text-[11px] font-medium text-slate-400 mr-1 flex items-center gap-1">
+            <Filter className="w-3 h-3 text-slate-400" /> Presets:
+          </span>
+          <button
+            type="button"
+            onClick={() => onSelectPreset?.('all')}
+            className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition ${
+              selectedCount === shiftBlocks.length
+                ? 'bg-indigo-600 text-white border-indigo-500'
+                : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-slate-700/60'
+            }`}
+          >
+            All 8
+          </button>
+          {[1, 2, 3, 4].map((dayNum) => (
+            <button
+              key={dayNum}
+              type="button"
+              onClick={() => onSelectPreset?.(`day${dayNum}` as any)}
+              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/60 hover:text-white transition"
+              title={`Select Day ${dayNum} Shift 1 and Shift 2`}
+            >
+              Day {dayNum}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => onSelectPreset?.('shift1')}
+            className="px-2.5 py-1 text-xs font-medium rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition"
+            title="Select all Shift 1s (09:00 - 15:00)"
+          >
+            Shift 1s
+          </button>
+          <button
+            type="button"
+            onClick={() => onSelectPreset?.('shift2')}
+            className="px-2.5 py-1 text-xs font-medium rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 transition"
+            title="Select all Shift 2s (15:00 - 21:00)"
+          >
+            Shift 2s
+          </button>
+          {selectedCount > 0 && (
+            <button
+              type="button"
+              onClick={() => onSelectPreset?.('clear')}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition ml-1"
+              title="Clear active selection"
+            >
+              <X className="w-3 h-3" />
+              Reset
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 8-Card Grid (4 cols x 2 rows) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {shiftBlocks.map((block) => {
+          const isSelected = selectedShiftKeys.includes(block.key);
           const male = block.total_male;
           const female = block.total_female;
           const totalGender = male + female;
@@ -207,27 +289,64 @@ export const TableGrid: React.FC<TableGridProps> = ({
 
           return (
             <div
-              key={`${block.shift_date}-${block.shift_id}`}
-              onClick={() => onSelectShift(block.shift_date, block.shift_id)}
-              className="group bg-slate-900/60 hover:bg-slate-900/90 border border-slate-800/80 hover:border-indigo-500/60 rounded-2xl p-5 transition-all duration-300 shadow-lg hover:shadow-indigo-500/10 flex flex-col justify-between cursor-pointer relative overflow-hidden"
+              key={block.key}
+              onClick={() => onToggleShiftSelection(block.shift_date, block.shift_id)}
+              className={`group rounded-2xl p-5 transition-all duration-300 flex flex-col justify-between cursor-pointer relative overflow-hidden select-none ${
+                isSelected
+                  ? 'bg-slate-900/95 border-2 border-indigo-500 shadow-xl shadow-indigo-500/20 ring-1 ring-indigo-400/40'
+                  : 'bg-slate-900/60 hover:bg-slate-900/90 border border-slate-800/80 hover:border-slate-700 shadow-lg'
+              }`}
             >
-              {/* Header: Day & Shift Badge */}
-              <div className="flex items-center justify-between mb-3">
+              {/* Top Accent line when selected */}
+              {isSelected && (
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500" />
+              )}
+
+              {/* Header: Day & Shift Badge + Select Checkbox */}
+              <div className="flex items-center justify-between mb-3 gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white bg-indigo-600/40 border border-indigo-500/40 px-2.5 py-0.5 rounded-md">
+                  <span className={`text-xs font-bold px-2.5 py-0.5 rounded-md border ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white border-indigo-400'
+                      : 'bg-indigo-600/30 text-indigo-200 border-indigo-500/30'
+                  }`}>
                     {block.dayLabel}
                   </span>
-                  <span className="text-xs text-slate-400 font-mono">
-                    {block.shift_date}
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                    isShift1
+                      ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                      : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
+                  }`}>
+                    Shift {block.shift_id}
                   </span>
                 </div>
-                <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
-                  isShift1
-                    ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
-                    : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
-                }`}>
-                  Shift {block.shift_id}
-                </span>
+
+                {/* Multi-Select Toggle Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleShiftSelection(block.shift_date, block.shift_id);
+                  }}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border shrink-0 ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white border-indigo-400 shadow-md shadow-indigo-600/30'
+                      : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-700/60'
+                  }`}
+                  title={isSelected ? 'Deselect from aggregate total' : 'Add to selected aggregate total'}
+                >
+                  <div className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-all ${
+                    isSelected ? 'bg-white text-indigo-700 border-white' : 'border-slate-400'
+                  }`}>
+                    {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                  </div>
+                  <span>{isSelected ? 'Selected' : 'Select'}</span>
+                </button>
+              </div>
+
+              {/* Date string */}
+              <div className="text-[11px] text-slate-400 font-mono mb-2">
+                {block.shift_date}
               </div>
 
               {/* Metrics Row: Headcount & Avg Dwell Time */}
@@ -318,6 +437,19 @@ export const TableGrid: React.FC<TableGridProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Explicit button to inspect individual sessions log */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onInspectShift(block.shift_date, block.shift_id);
+                }}
+                className="mt-4 w-full py-2 px-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-xs font-semibold text-slate-300 hover:text-white border border-slate-700/60 hover:border-indigo-500/50 transition flex items-center justify-center gap-1.5 group/inspect"
+              >
+                <Eye className="w-3.5 h-3.5 text-indigo-400 group-hover/inspect:text-indigo-300" />
+                <span>Inspect Visitor Sessions</span>
+              </button>
 
             </div>
           );
