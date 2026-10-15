@@ -10,7 +10,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 /**
  * POST /api/snapshots
- * Accepts a multipart/form-data image upload, streams the buffer to Cloud Storage (GCP or Supabase),
+ * Accepts a multipart/form-data image upload, streams the buffer to Google Cloud Storage (GCP),
  * logs the resulting public URL in the cctv_snapshots table, and returns the record.
  *
  * Form fields:
@@ -32,7 +32,7 @@ snapshotsRouter.post('/snapshots', upload.single('image'), async (req: Request, 
     const ext = req.file.mimetype.split('/')[1] || 'jpg';
     const storagePath = `snapshots/${datePart}/${Date.now()}-${req.file.originalname || `snapshot.${ext}`}`;
 
-    // Upload the in-memory buffer to Cloud Storage (GCP or Supabase)
+    // Upload the in-memory buffer to Cloud Storage (GCP or local disk fallback)
     const { url: imageUrl, provider } = await uploadToStorage(
       req.file.buffer,
       storagePath,
