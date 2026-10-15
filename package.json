@@ -7,15 +7,21 @@
     "dev": "concurrently -k -p \"[{name}]\" -c \"cyan,magenta\" \"npm:server\" \"npm:client\"",
     "client": "vite",
     "server": "tsx watch server/index.ts",
+    "start": "tsx server/index.ts",
     "build": "tsc -b && vite build",
     "seed": "tsx server/seeder.ts"
   },
   "dependencies": {
+    "@google-cloud/storage": "^8.4.0",
+    "@supabase/supabase-js": "^2.117.3",
     "@tanstack/react-table": "^8.20.5",
+    "@types/multer": "^2.3.0",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
+    "dotenv": "^18.0.7",
     "express": "^4.20.0",
     "lucide-react": "^0.453.0",
+    "multer": "^2.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.13.0"

@@ -23,6 +23,11 @@ npm-debug.log*
 *.db
 *.sqlite
 
+# Uploaded Files & Credentials
+uploads/
+*gcp-key*.json
+*service-account*.json
+
 # OS & Editor
 .DS_Store
 Thumbs.db

@@ -8,6 +8,14 @@ export interface VisitorSession {
   age_group: 'Adult' | 'Kid';
   shift_date: string;
   shift_id: number;
+  is_staff?: number;
+  evidence_image_url?: string | null;
+}
+
+export interface CctvSnapshot {
+  id: number;
+  timestamp: string;
+  image_url: string;
 }
 
 export interface ShiftSummary {

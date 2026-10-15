@@ -10,20 +10,25 @@ import { ErrorPage } from './components/ErrorPage';
 import { DailyTrendCharts } from './components/DailyTrendCharts';
 import { CampaignOverview } from './components/CampaignOverview';
 import { CampaignEditModal } from './components/CampaignEditModal';
+import { CampaignCreateModal } from './components/CampaignCreateModal';
 import { useCampaign } from './hooks/useCampaign';
 import { StaffConfig } from './types/telemetry';
+import { DashboardSnapshots } from './components/DashboardSnapshots';
 
 export function App() {
+  // Campaign settings state & modal
   const {
-    summaries,
-    loading,
-    error,
-    setError,
-    lastRefreshed,
-    autoRefresh,
-    setAutoRefresh,
-    fetchData,
-  } = useTelemetry();
+    campaign,
+    campaigns,
+    loading: campaignLoading,
+    updateCampaign,
+    createCampaign,
+    activateCampaign,
+    deleteCampaign,
+  } = useCampaign();
+
+  const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
+  const [isCampaignCreateModalOpen, setIsCampaignCreateModalOpen] = useState(false);
 
   // Baseline staff noise reduction configuration
   const [staffConfig, setStaffConfig] = useState<StaffConfig>({
@@ -38,9 +43,16 @@ export function App() {
   const [showDemographics, setShowDemographics] = useState<boolean>(true);
   const [viewCachedData, setViewCachedData] = useState<boolean>(false);
 
-  // Campaign settings state & modal
-  const { campaign, loading: campaignLoading, updateCampaign } = useCampaign();
-  const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
+  const {
+    summaries,
+    loading,
+    error,
+    setError,
+    lastRefreshed,
+    autoRefresh,
+    setAutoRefresh,
+    fetchData,
+  } = useTelemetry(campaign?.id);
 
   // Dynamic multi-shift selection state (e.g. Day 1 Shift 1 + Day 2 Shift 2)
   const [selectedShiftKeys, setSelectedShiftKeys] = useState<string[]>([]);
@@ -192,8 +204,18 @@ export function App() {
         {/* 0. Campaign Settings Overview Header Section */}
         <CampaignOverview
           campaign={campaign}
+          campaigns={campaigns}
           loading={campaignLoading}
           onOpenEdit={() => setIsCampaignModalOpen(true)}
+          onOpenCreate={() => setIsCampaignCreateModalOpen(true)}
+          onSelectCampaign={async (id) => {
+            await activateCampaign(id);
+            clearShiftSelection();
+          }}
+          onDeleteCampaign={async (id) => {
+            await deleteCampaign(id);
+            clearShiftSelection();
+          }}
         />
 
         {/* 1. 4-Day Event Shift Occupancy Grid (8 Shift Cards with multi-select) */}
@@ -206,6 +228,9 @@ export function App() {
           onInspectShift={(date, shiftId) => setSelectedShiftForDetail({ date, shiftId })}
           showDemographics={showDemographics}
         />
+
+        {/* 1b. CCTV Snapshot Viewer */}
+        <DashboardSnapshots campaignId={campaign?.id} limit={10} autoRefreshMs={30000} />
 
         {/* 2. Selected Shifts Aggregate / Overall Event Totals */}
         <GlobalTotalsHeader
@@ -250,6 +275,16 @@ export function App() {
         </div>
       </footer>
 
+      {/* Campaign Settings Create Modal */}
+      <CampaignCreateModal
+        isOpen={isCampaignCreateModalOpen}
+        onClose={() => setIsCampaignCreateModalOpen(false)}
+        onCreate={async (newCampaign) => {
+          await createCampaign(newCampaign);
+          clearShiftSelection();
+        }}
+      />
+
       {/* Campaign Settings Edit Modal */}
       <CampaignEditModal
         isOpen={isCampaignModalOpen}
@@ -275,6 +310,7 @@ export function App() {
         staffConfig={staffConfig}
         showDemographics={showDemographics}
         onError={setError}
+        onStatusChange={fetchData}
       />
 
     </div>

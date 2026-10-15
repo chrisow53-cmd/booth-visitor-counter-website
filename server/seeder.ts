@@ -1,26 +1,54 @@
-import { db } from './db.js';
+import { db, getActiveCampaign } from './db.js';
 
-export function seedDatabase(force = false) {
-  const countStmt = db.prepare('SELECT COUNT(*) as count FROM visitor_sessions');
-  const result = countStmt.get() as { count: number };
+/**
+ * Generate a list of YYYY-MM-DD date strings between startDate and endDate (inclusive).
+ */
+export function getDatesInRange(startDateStr: string, endDateStr: string): string[] {
+  const dates: string[] = [];
+  const curr = new Date(startDateStr);
+  const end = new Date(endDateStr);
+
+  // Fallback if invalid
+  if (isNaN(curr.getTime()) || isNaN(end.getTime())) {
+    return [startDateStr];
+  }
+
+  while (curr <= end) {
+    dates.push(curr.toISOString().split('T')[0]);
+    curr.setDate(curr.getDate() + 1);
+  }
+
+  return dates;
+}
+
+export function seedDatabase(force = false, targetCampaignId?: number) {
+  const activeCampaign = getActiveCampaign();
+  const campaignId = targetCampaignId || activeCampaign?.id || 1;
+
+  const countStmt = db.prepare('SELECT COUNT(*) as count FROM visitor_sessions WHERE campaign_id = ?');
+  const result = countStmt.get(campaignId) as { count: number };
 
   if (result.count > 0 && !force) {
-    console.log(`[Seeder] Database already contains ${result.count} visitor sessions. Skipping seed.`);
+    console.log(`[Seeder] Campaign #${campaignId} already contains ${result.count} visitor sessions. Skipping seed.`);
     return result.count;
   }
 
   if (force) {
-    db.exec('DELETE FROM visitor_sessions');
-    console.log('[Seeder] Cleared existing visitor sessions data.');
+    db.prepare('DELETE FROM visitor_sessions WHERE campaign_id = ?').run(campaignId);
+    console.log(`[Seeder] Cleared existing visitor sessions data for campaign #${campaignId}.`);
   }
 
   const insertStmt = db.prepare(`
     INSERT INTO visitor_sessions (
-      visitor_id, start_time, end_time, dwell_time, gender, age_group, shift_date, shift_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      visitor_id, campaign_id, start_time, end_time, dwell_time, gender, age_group, shift_date, shift_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  const dates = ['2026-10-03', '2026-10-04', '2026-10-05', '2026-10-06'];
+  // Use campaign dates or fallback
+  const startDate = activeCampaign?.start_date || '2026-10-15';
+  const endDate = activeCampaign?.end_date || '2026-10-18';
+  const dates = getDatesInRange(startDate, endDate);
+
   const shifts = [
     { id: 1, startHour: 9, endHour: 15 },  // Shift 1: 09:00:00 to 14:59:59
     { id: 2, startHour: 15, endHour: 21 } // Shift 2: 15:00:00 to 20:59:59
@@ -34,7 +62,7 @@ export function seedDatabase(force = false) {
   try {
     for (const dateStr of dates) {
       for (const shift of shifts) {
-        // Generate ~1850-1950 visitor sessions per shift to achieve ~22.5 avg headcount per slot & ~255-265s dwell time
+        // Generate ~1850-1950 visitor sessions per shift
         const sessionCount = 1850 + Math.floor(Math.random() * 100);
         const shiftStartMs = new Date(`${dateStr}T${shift.startHour.toString().padStart(2, '0')}:00:00Z`).getTime();
         const shiftDurationMs = 6 * 60 * 60 * 1000; // 6 hours = 21,600,000 ms
@@ -42,20 +70,18 @@ export function seedDatabase(force = false) {
         for (let i = 0; i < sessionCount; i++) {
           const visId = `VIS-${visitorCounter++}`;
           
-          // Random start time within shift (leave room for dwell time near the end)
           const offsetMs = Math.floor(Math.random() * (shiftDurationMs - 300000));
           const startTime = new Date(shiftStartMs + offsetMs);
 
-          // Dwell time between 180s and 340s (mean ~260s)
           const dwellSec = Math.floor(180 + Math.random() * 160);
           const endTime = new Date(startTime.getTime() + dwellSec * 1000);
 
-          // Demographics: ~51% Male, ~81% Adult
           const gender = Math.random() < 0.51 ? 'M' : 'F';
           const ageGroup = Math.random() < 0.81 ? 'Adult' : 'Kid';
 
           insertStmt.run(
             visId,
+            campaignId,
             startTime.toISOString(),
             endTime.toISOString(),
             dwellSec,
@@ -69,12 +95,13 @@ export function seedDatabase(force = false) {
         }
       }
     }
-    db.exec('COMMIT');
-    console.log(`[Seeder] Successfully seeded ${totalInserted} visitor sessions across 4 days & 8 shifts.`);
-  } catch (err) {
-    db.exec('ROLLBACK');
-    console.error('[Seeder] Seeding error:', err);
-  }
 
-  return totalInserted;
+    db.exec('COMMIT');
+    console.log(`[Seeder] Successfully seeded ${totalInserted} visitor sessions across ${dates.length} days for Campaign #${campaignId}.`);
+    return totalInserted;
+  } catch (error) {
+    db.exec('ROLLBACK');
+    console.error('[Seeder] Error seeding database:', error);
+    throw error;
+  }
 }

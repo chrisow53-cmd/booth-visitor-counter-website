@@ -192,7 +192,7 @@ export const TableGrid: React.FC<TableGridProps> = ({
           <div className="flex items-center gap-3">
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
               <Layers className="w-4 h-4 text-indigo-400" />
-              4-Day Event Shift Occupancy
+              Event Shift Occupancy
             </h2>
             <span
               className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border transition-all flex items-center gap-1.5 ${
@@ -226,9 +226,9 @@ export const TableGrid: React.FC<TableGridProps> = ({
                 : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-slate-700/60'
             }`}
           >
-            All 8
+            All {shiftBlocks.length}
           </button>
-          {[1, 2, 3, 4].map((dayNum) => (
+          {Array.from(new Set(shiftBlocks.map((s) => s.dayNumber))).map((dayNum) => (
             <button
               key={dayNum}
               type="button"
@@ -358,9 +358,15 @@ export const TableGrid: React.FC<TableGridProps> = ({
                   <div className="text-3xl font-extrabold text-white font-mono">
                     {block.total_visitors.toLocaleString()}
                   </div>
-                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                    avg {Math.round(block.total_visitors / 6).toLocaleString()}/hour
-                  </div>
+                  {block.total_visitors === 0 ? (
+                    <div className="text-[10px] text-slate-500 italic mt-0.5">
+                      Waiting for telemetry
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                      avg {Math.round(block.total_visitors / 6).toLocaleString()}/hour
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-right">

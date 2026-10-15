@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ShiftSummary } from '../types/telemetry';
 import { AppError } from '../types/error';
 
-export function useTelemetry() {
+export function useTelemetry(campaignId?: number) {
   const [summaries, setSummaries] = useState<ShiftSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<AppError | null>(null);
@@ -13,7 +13,8 @@ export function useTelemetry() {
     try {
       setLoading(true);
 
-      const resSummary = await fetch('/api/shifts/summary');
+      const url = campaignId ? `/api/shifts/summary?campaign_id=${campaignId}` : '/api/shifts/summary';
+      const resSummary = await fetch(url);
       if (!resSummary.ok) {
         throw new Error(`Server returned HTTP ${resSummary.status}: ${resSummary.statusText || 'Failed to fetch shift summary'}`);
       }
@@ -39,11 +40,15 @@ export function useTelemetry() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [campaignId]);
 
   const resetAndReseed = async () => {
     try {
-      const res = await fetch('/api/seed', { method: 'POST' });
+      const res = await fetch('/api/seed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaign_id: campaignId }),
+      });
       if (res.ok) {
         await fetchData();
       }
@@ -73,6 +78,6 @@ export function useTelemetry() {
     autoRefresh,
     setAutoRefresh,
     fetchData,
-    resetAndReseed
+    resetAndReseed,
   };
 }
