@@ -80,6 +80,48 @@ export function initDatabase() {
     db.exec(`UPDATE cctv_snapshots SET campaign_id = 1 WHERE campaign_id IS NULL;`);
   } catch {}
 
+  // Migrate campaigns table: ensure newer columns exist on legacy databases
+  try {
+    db.exec(`ALTER TABLE campaigns ADD COLUMN is_active INTEGER DEFAULT 1;`);
+    console.log('[SQLite] Migrated campaigns: added is_active column.');
+  } catch {}
+
+  try {
+    db.exec(`ALTER TABLE campaigns ADD COLUMN client_name TEXT DEFAULT '';`);
+  } catch {}
+
+  try {
+    db.exec(`ALTER TABLE campaigns ADD COLUMN campaign_name TEXT DEFAULT '';`);
+  } catch {}
+
+  try {
+    db.exec(`ALTER TABLE campaigns ADD COLUMN location TEXT DEFAULT '';`);
+  } catch {}
+
+  try {
+    db.exec(`ALTER TABLE campaigns ADD COLUMN space_size_sqm REAL DEFAULT 250.0;`);
+  } catch {}
+
+  try {
+    db.exec(`ALTER TABLE campaigns ADD COLUMN start_date TEXT DEFAULT '';`);
+  } catch {}
+
+  try {
+    db.exec(`ALTER TABLE campaigns ADD COLUMN end_date TEXT DEFAULT '';`);
+  } catch {}
+
+  try {
+    db.exec(`ALTER TABLE campaigns ADD COLUMN created_at TEXT DEFAULT '';`);
+  } catch {}
+
+  try {
+    db.exec(`ALTER TABLE campaigns ADD COLUMN updated_at TEXT DEFAULT '';`);
+  } catch {}
+
+  try {
+    db.exec(`UPDATE campaigns SET is_active = 1 WHERE is_active IS NULL;`);
+  } catch {}
+
   // Create indexes after columns are guaranteed to exist
   try {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_sessions_campaign ON visitor_sessions(campaign_id, shift_date, shift_id);`);
@@ -142,12 +184,20 @@ export interface CampaignRecord {
 }
 
 export function getActiveCampaign(): CampaignRecord | null {
-  const row = db.prepare(`
-    SELECT * FROM campaigns WHERE is_active = 1 ORDER BY id DESC LIMIT 1
-  `).get() as unknown as CampaignRecord | undefined;
+  try {
+    const row = db.prepare(`
+      SELECT * FROM campaigns WHERE is_active = 1 ORDER BY id DESC LIMIT 1
+    `).get() as unknown as CampaignRecord | undefined;
 
-  if (row) return row;
+    if (row) return row;
+  } catch (err) {
+    console.warn('[SQLite] Notice querying is_active:', err);
+  }
 
   // Fallback to latest campaign if none marked active
-  return (db.prepare(`SELECT * FROM campaigns ORDER BY id DESC LIMIT 1`).get() as unknown as CampaignRecord) || null;
+  try {
+    return (db.prepare(`SELECT * FROM campaigns ORDER BY id DESC LIMIT 1`).get() as unknown as CampaignRecord) || null;
+  } catch {
+    return null;
+  }
 }
