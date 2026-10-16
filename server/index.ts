@@ -8,7 +8,7 @@ import { seedDatabase } from './seeder.js';
 import { metricsRouter } from './routes/metrics.js';
 import { campaignRouter } from './routes/campaign.js';
 import { snapshotsRouter } from './routes/snapshots.js';
-import { getActiveStorageInfo } from './storage.js';
+import { getActiveStorageInfo, UPLOADS_DIR } from './storage.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
@@ -26,12 +26,15 @@ app.use('/api', metricsRouter);
 app.use('/api', campaignRouter);
 app.use('/api', snapshotsRouter);
 
-// Serve locally stored uploads (CCTV snapshots)
-const uploadsPath = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadsPath)) {
-  fs.mkdirSync(uploadsPath, { recursive: true });
+// Serve locally stored uploads (CCTV snapshots) if directory exists
+try {
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  }
+} catch {}
+if (fs.existsSync(UPLOADS_DIR)) {
+  app.use('/uploads', express.static(UPLOADS_DIR));
 }
-app.use('/uploads', express.static(uploadsPath));
 
 // Health check endpoint (reports storage configuration & status)
 app.get('/api/health', (req, res) => {

@@ -14,9 +14,13 @@ const GCS_BUCKET = process.env.GCS_BUCKET_NAME || process.env.GCP_STORAGE_BUCKET
 const GCS_PROJECT_ID = process.env.GCP_PROJECT_ID;
 
 // Directory for local fallback storage (when developing locally without GCP keys)
-const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+export const UPLOADS_DIR = process.env.UPLOADS_DIR || process.env.EVIDENCE_DIR || path.join(process.cwd(), 'uploads');
+try {
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  }
+} catch (err: any) {
+  console.warn(`[Storage] Notice: Local uploads dir "${UPLOADS_DIR}" could not be created (${err.message}).`);
 }
 
 let _gcsClient: Storage | null = null;
