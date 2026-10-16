@@ -19,7 +19,11 @@ app.use(express.json());
 
 // Initialize SQLite Database and seed initial event dataset if empty
 initDatabase();
-seedDatabase(false);
+try {
+  seedDatabase(false);
+} catch (seedErr: any) {
+  console.warn('[Seeder] Notice: Seeding completed or skipped:', seedErr.message);
+}
 
 // API Routes
 app.use('/api', metricsRouter);

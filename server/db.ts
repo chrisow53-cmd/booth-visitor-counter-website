@@ -48,6 +48,49 @@ export function initDatabase() {
     );
   `);
 
+  // Check visitor_sessions columns and migrate legacy schema (e.g. session_id -> visitor_id)
+  try {
+    const sessionCols = db.prepare("PRAGMA table_info(visitor_sessions)").all() as { name: string; notnull: number }[];
+    const colMap = new Set(sessionCols.map(c => c.name));
+
+    if (colMap.has('session_id')) {
+      console.log('[SQLite] Migrating legacy visitor_sessions schema (session_id -> visitor_id)...');
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS visitor_sessions_v2 (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          visitor_id TEXT NOT NULL,
+          campaign_id INTEGER DEFAULT 1,
+          start_time TEXT NOT NULL,
+          end_time TEXT NOT NULL,
+          dwell_time INTEGER NOT NULL,
+          gender TEXT NOT NULL,
+          age_group TEXT NOT NULL,
+          shift_date TEXT NOT NULL,
+          shift_id INTEGER NOT NULL,
+          is_staff INTEGER DEFAULT 0,
+          evidence_image_url TEXT DEFAULT NULL
+        );
+      `);
+
+      const visIdExpr = colMap.has('visitor_id') ? 'COALESCE(visitor_id, session_id, "VIS-" || id)' : 'COALESCE(session_id, "VIS-" || id)';
+      const campIdExpr = colMap.has('campaign_id') ? 'COALESCE(campaign_id, 1)' : '1';
+      const staffExpr = colMap.has('is_staff') ? 'COALESCE(is_staff, 0)' : '0';
+      const evExpr = colMap.has('evidence_image_url') ? 'evidence_image_url' : 'NULL';
+
+      db.exec(`
+        INSERT INTO visitor_sessions_v2 (id, visitor_id, campaign_id, start_time, end_time, dwell_time, gender, age_group, shift_date, shift_id, is_staff, evidence_image_url)
+        SELECT id, ${visIdExpr}, ${campIdExpr}, start_time, end_time, dwell_time, gender, age_group, shift_date, shift_id, ${staffExpr}, ${evExpr}
+        FROM visitor_sessions;
+      `);
+
+      db.exec(`DROP TABLE visitor_sessions;`);
+      db.exec(`ALTER TABLE visitor_sessions_v2 RENAME TO visitor_sessions;`);
+      console.log('[SQLite] Legacy visitor_sessions table successfully upgraded to modern schema!');
+    }
+  } catch (migErr) {
+    console.error('[SQLite] Error migrating visitor_sessions table:', migErr);
+  }
+
   // Migrate existing tables: add campaign_id, is_staff, and evidence_image_url if missing
   try {
     db.exec(`ALTER TABLE visitor_sessions ADD COLUMN campaign_id INTEGER DEFAULT 1;`);
