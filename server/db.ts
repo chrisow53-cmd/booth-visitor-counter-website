@@ -72,7 +72,7 @@ export function initDatabase() {
         );
       `);
 
-      const visIdExpr = colMap.has('visitor_id') ? 'COALESCE(visitor_id, session_id, "VIS-" || id)' : 'COALESCE(session_id, "VIS-" || id)';
+      const visIdExpr = colMap.has('visitor_id') ? "COALESCE(visitor_id, session_id, 'VIS-' || id)" : "COALESCE(session_id, 'VIS-' || id)";
       const campIdExpr = colMap.has('campaign_id') ? 'COALESCE(campaign_id, 1)' : '1';
       const staffExpr = colMap.has('is_staff') ? 'COALESCE(is_staff, 0)' : '0';
       const evExpr = colMap.has('evidence_image_url') ? 'evidence_image_url' : 'NULL';
