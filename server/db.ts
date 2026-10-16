@@ -1,7 +1,12 @@
 import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
+import fs from 'node:fs';
 
-const DB_PATH = path.join(process.cwd(), 'visitor_tracking.db');
+const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), 'visitor_tracking.db');
+const dbDir = path.dirname(DB_PATH);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
 
 export const db = new DatabaseSync(DB_PATH);
 
