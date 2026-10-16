@@ -60,8 +60,31 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, () => {
   const storageInfo = getActiveStorageInfo();
   console.log(`[Express Backend] Visitor tracking API server running at http://${HOST}:${PORT}`);
   console.log(`[Express Backend] Active cloud storage provider: ${storageInfo.provider.toUpperCase()} (bucket: ${storageInfo.bucket})`);
+});
+
+// Production Error & Signal Guards
+process.on('uncaughtException', (err) => {
+  console.error('[Process Error] Uncaught exception:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Process Error] Unhandled rejection:', reason);
+});
+
+process.on('SIGTERM', () => {
+  console.log('[Express Backend] Received SIGTERM signal. Gracefully shutting down...');
+  server.close(() => {
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('[Express Backend] Received SIGINT signal. Closing...');
+  server.close(() => {
+    process.exit(0);
+  });
 });
