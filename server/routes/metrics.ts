@@ -169,6 +169,33 @@ metricsRouter.get('/summary', (req: Request, res: Response) => {
   return res.redirect('/api/shifts/summary');
 });
 
+// 3b. POST /api/sessions/reset - Clear visitor sessions (for specific campaign or all)
+metricsRouter.post('/sessions/reset', (req: Request, res: Response) => {
+  try {
+    const campaignId = req.body?.campaign_id ? Number(req.body.campaign_id) : null;
+    let deletedCount = 0;
+
+    if (campaignId) {
+      const stmt = db.prepare('DELETE FROM visitor_sessions WHERE campaign_id = ?');
+      const info = stmt.run(campaignId);
+      deletedCount = Number(info.changes);
+    } else {
+      const stmt = db.prepare('DELETE FROM visitor_sessions');
+      const info = stmt.run();
+      deletedCount = Number(info.changes);
+    }
+
+    return res.json({
+      success: true,
+      deleted_count: deletedCount,
+      message: `Successfully cleared ${deletedCount} visitor session(s).`,
+    });
+  } catch (err: any) {
+    console.error('[POST /api/sessions/reset error]:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // Core helper to insert an array of visitor session records within a transaction
 function insertVisitorSessions(rawRecords: any[]) {
   const activeCampaign = getActiveCampaign();

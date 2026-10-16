@@ -17,12 +17,16 @@ const HOST = '0.0.0.0';
 app.use(cors());
 app.use(express.json());
 
-// Initialize SQLite Database and seed initial event dataset if empty
+// Initialize SQLite Database
 initDatabase();
-try {
-  seedDatabase(false);
-} catch (seedErr: any) {
-  console.warn('[Seeder] Notice: Seeding completed or skipped:', seedErr.message);
+
+// Only seed dummy test data if explicitly enabled via SEED_DUMMY_DATA=true
+if (process.env.SEED_DUMMY_DATA === 'true') {
+  try {
+    seedDatabase(false);
+  } catch (seedErr: any) {
+    console.warn('[Seeder] Notice: Seeding completed or skipped:', seedErr.message);
+  }
 }
 
 // API Routes
