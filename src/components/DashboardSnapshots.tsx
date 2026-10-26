@@ -123,7 +123,7 @@ export const DashboardSnapshots: React.FC<DashboardSnapshotsProps> = ({
       const params = new URLSearchParams();
       if (campaignId) params.append('campaign_id', String(campaignId));
       params.append('date', selectedDate);
-      params.append('limit', '1000'); // Fetch all snapshots on that day
+      params.append('limit', 'all'); // Fetch all snapshots without artificial cap (up to 500+)
       params.append('order', sortAsc ? 'asc' : 'desc');
 
       const res = await fetch(`/api/snapshots?${params.toString()}`);

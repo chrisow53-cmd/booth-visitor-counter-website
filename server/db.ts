@@ -169,7 +169,9 @@ export function initDatabase() {
   });
 
   ensureTableColumns('cctv_snapshots', {
-    campaign_id: "INTEGER DEFAULT 1"
+    campaign_id: "INTEGER DEFAULT 1",
+    shift_id: "INTEGER DEFAULT NULL",
+    camera_id: "TEXT DEFAULT NULL"
   });
 
   // Ensure is_active values are non-null
@@ -183,6 +185,7 @@ export function initDatabase() {
   // 3. Create performance indexes
   try {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_sessions_campaign ON visitor_sessions(campaign_id, shift_date, shift_id);`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_snapshots_campaign_ts ON cctv_snapshots(campaign_id, timestamp);`);
   } catch (err: any) {
     console.warn('[SQLite] Index notice:', err.message);
   }

@@ -40,12 +40,14 @@ snapshotsRouter.post('/snapshots', upload.single('image'), async (req: Request, 
     );
 
     const campaignId = req.body?.campaign_id ? Number(req.body.campaign_id) : (getActiveCampaign()?.id || 1);
+    const shiftId = req.body?.shift_id ? Number(req.body.shift_id) : null;
+    const cameraId = typeof req.body?.camera_id === 'string' && req.body.camera_id.trim() ? req.body.camera_id.trim() : null;
 
     // Persist the snapshot record in SQLite
     const stmt = db.prepare(`
-      INSERT INTO cctv_snapshots (campaign_id, timestamp, image_url) VALUES (?, ?, ?)
+      INSERT INTO cctv_snapshots (campaign_id, shift_id, camera_id, timestamp, image_url) VALUES (?, ?, ?, ?, ?)
     `);
-    const result = stmt.run(campaignId, timestamp, imageUrl);
+    const result = stmt.run(campaignId, shiftId, cameraId, timestamp, imageUrl);
 
     return res.status(201).json({
       success: true,
@@ -53,6 +55,8 @@ snapshotsRouter.post('/snapshots', upload.single('image'), async (req: Request, 
       snapshot: {
         id: Number(result.lastInsertRowid),
         campaign_id: campaignId,
+        shift_id: shiftId,
+        camera_id: cameraId,
         timestamp,
         image_url: imageUrl,
       },
@@ -115,15 +119,23 @@ snapshotsRouter.get('/snapshots', (req: Request, res: Response) => {
       ? rawOrder
       : (dateParam ? 'ASC' : 'DESC');
 
-    // When filtering by a specific date, allow returning all photos for that day (up to 2000)
-    const defaultLimit = dateParam ? 1000 : 20;
-    const limit = Math.min(2000, Math.max(1, parseInt(String(req.query.limit || defaultLimit), 10) || defaultLimit));
+    // When filtering by a specific date, allow up to 5,000 photos per day (no artificial limit)
+    const rawLimit = req.query.limit;
+    let limit = dateParam ? 5000 : 500;
+    if (rawLimit) {
+      if (rawLimit === 'all' || rawLimit === 'none' || rawLimit === '0') {
+        limit = 10000;
+      } else {
+        const parsed = parseInt(String(rawLimit), 10);
+        if (!isNaN(parsed) && parsed > 0) limit = parsed;
+      }
+    }
 
     let rows: any[] = [];
 
     if (dateParam) {
       const stmt = db.prepare(`
-        SELECT id, campaign_id, timestamp, image_url
+        SELECT id, campaign_id, shift_id, camera_id, timestamp, image_url
         FROM cctv_snapshots
         WHERE campaign_id = ? AND (timestamp LIKE ? OR substr(timestamp, 1, 10) = ?)
         ORDER BY timestamp ${order}
@@ -132,7 +144,7 @@ snapshotsRouter.get('/snapshots', (req: Request, res: Response) => {
       rows = stmt.all(campaignId, `${dateParam}%`, dateParam, limit);
     } else {
       const stmt = db.prepare(`
-        SELECT id, campaign_id, timestamp, image_url
+        SELECT id, campaign_id, shift_id, camera_id, timestamp, image_url
         FROM cctv_snapshots
         WHERE campaign_id = ?
         ORDER BY timestamp ${order}
