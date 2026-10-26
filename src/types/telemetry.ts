@@ -16,6 +16,10 @@ export interface CctvSnapshot {
   id: number;
   timestamp: string;
   image_url: string;
+  campaign_id?: number;
+  shift_id?: number;
+  camera_id?: string;
+  created_at?: string;
 }
 
 export interface ShiftSummary {
