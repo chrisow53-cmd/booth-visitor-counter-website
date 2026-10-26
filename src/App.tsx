@@ -230,7 +230,11 @@ export function App() {
         />
 
         {/* 1b. CCTV Snapshot Viewer */}
-        <DashboardSnapshots campaignId={campaign?.id} limit={10} autoRefreshMs={30000} />
+        <DashboardSnapshots
+          campaignId={campaign?.id}
+          availableDates={uniqueDates}
+          autoRefreshMs={30000}
+        />
 
         {/* 2. Selected Shifts Aggregate / Overall Event Totals */}
         <GlobalTotalsHeader
