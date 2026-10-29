@@ -7,7 +7,7 @@ export function useTelemetry(campaignId?: number) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<AppError | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
-  const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
 
   const fetchData = useCallback(async () => {
     try {

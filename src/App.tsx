@@ -40,7 +40,7 @@ export function App() {
 
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [selectedShiftForDetail, setSelectedShiftForDetail] = useState<{ date: string; shiftId: number } | null>(null);
-  const [showDemographics, setShowDemographics] = useState<boolean>(true);
+  const [showDemographics, setShowDemographics] = useState<boolean>(false);
   const [viewCachedData, setViewCachedData] = useState<boolean>(false);
 
   const {
@@ -233,7 +233,7 @@ export function App() {
         <DashboardSnapshots
           campaignId={campaign?.id}
           availableDates={uniqueDates}
-          autoRefreshMs={30000}
+          autoRefreshMs={autoRefresh ? 30000 : 0}
         />
 
         {/* 2. Selected Shifts Aggregate / Overall Event Totals */}

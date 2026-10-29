@@ -46,23 +46,23 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Minimal Controls */}
         <div className="flex items-center gap-3">
           
-          {/* Gender & Age Demographics Toggle */}
+                    {/* Gender & Age Demographics Toggle */}
           <button
             onClick={onToggleDemographics}
             className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition border ${
-              !showDemographics
-                ? 'bg-amber-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25'
-                : 'bg-slate-900/60 text-slate-300 border-slate-800 hover:bg-slate-800 hover:text-white'
+              showDemographics
+                ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40 hover:bg-indigo-600/30'
+                : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
             }`}
             title={showDemographics ? 'Hide gender and age demographics' : 'Show gender and age demographics'}
           >
             {showDemographics ? (
               <Eye className="w-3.5 h-3.5 text-indigo-400" />
             ) : (
-              <EyeOff className="w-3.5 h-3.5 text-amber-400" />
+              <EyeOff className="w-3.5 h-3.5 text-slate-500" />
             )}
             <span>Gender & Age:</span>
-            <span className={`font-semibold ${showDemographics ? 'text-indigo-300' : 'text-amber-400'}`}>
+            <span className={`font-semibold ${showDemographics ? 'text-indigo-300' : 'text-slate-400'}`}>
               {showDemographics ? 'ON' : 'OFF'}
             </span>
           </button>
@@ -94,9 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
-              className={`px-2 py-1 text-[11px] font-medium rounded transition ${
-                autoRefresh ? 'bg-indigo-600/30 text-indigo-300' : 'text-slate-500 hover:text-slate-300'
-              }`}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition ${autoRefresh ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 font-semibold shadow-sm' : 'bg-slate-950/40 text-slate-400 hover:text-slate-200 border border-transparent'}`}
             >
               {autoRefresh ? 'Auto Sync' : 'Paused'}
             </button>
