@@ -66,6 +66,7 @@ export const DashboardSnapshots: React.FC<DashboardSnapshotsProps> = ({
 
   // Thumbnail container ref for auto-scrolling
   const thumbnailContainerRef = useRef<HTMLDivElement | null>(null);
+  const mainImageRef = useRef<HTMLImageElement | null>(null);
 
   // 1. Fetch distinct snapshot dates and their counts dynamically from DB
   const fetchDateCounts = useCallback(async () => {
@@ -188,11 +189,29 @@ export const DashboardSnapshots: React.FC<DashboardSnapshotsProps> = ({
     return Array.from(shiftSet).sort();
   }, [snapshots, getSnapshotShiftId]);
 
-  // Reset image states on index change
+  const current = filteredSnapshots[currentIndex] ?? null;
+  const total = filteredSnapshots.length;
+
+  // Check if image is already cached/loaded when currentIndex or current snapshot changes
   useEffect(() => {
+    // If the image is already cached by the browser, mark it loaded immediately
+    if (mainImageRef.current && mainImageRef.current.complete) {
+      if (mainImageRef.current.naturalWidth > 0) {
+        setImgLoaded(true);
+        setImgError(false);
+        return;
+      }
+    }
     setImgLoaded(false);
     setImgError(false);
-  }, [currentIndex, selectedShiftFilter]);
+
+    // Fallback: Clear spinner after 3s if load event was swallowed
+    const timer = setTimeout(() => {
+      setImgLoaded(true);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [currentIndex, selectedShiftFilter, current?.image_url]);
 
   // Slideshow auto-advance
   useEffect(() => {
@@ -230,8 +249,7 @@ export const DashboardSnapshots: React.FC<DashboardSnapshotsProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [filteredSnapshots.length, lightboxOpen]);
 
-  const current = filteredSnapshots[currentIndex] ?? null;
-  const total = filteredSnapshots.length;
+
 
   const goNext = () => setCurrentIndex((i) => Math.min(total - 1, i + 1));
   const goPrev = () => setCurrentIndex((i) => Math.max(0, i - 1));
@@ -606,8 +624,8 @@ export const DashboardSnapshots: React.FC<DashboardSnapshotsProps> = ({
               {/* Main Image Panel */}
               <div className="relative flex-1 bg-slate-950/90 min-h-[320px] lg:min-h-[480px] flex items-center justify-center group/img overflow-hidden">
                 {!imgLoaded && !imgError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-950">
-                    <Loader2 className="w-8 h-8 animate-spin text-cyan-400/60" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70 pointer-events-none transition-opacity">
+                    <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
                   </div>
                 )}
 
@@ -627,17 +645,27 @@ export const DashboardSnapshots: React.FC<DashboardSnapshotsProps> = ({
                   </div>
                 ) : (
                   <img
+                    ref={(el) => {
+                      mainImageRef.current = el;
+                      if (el && el.complete && el.naturalWidth > 0 && !imgLoaded) {
+                        setImgLoaded(true);
+                        setImgError(false);
+                      }
+                    }}
                     key={current.image_url}
                     src={current.image_url}
                     alt={`CCTV Snapshot — ${formatFullTs(current.timestamp)}`}
-                    onLoad={() => setImgLoaded(true)}
+                    onLoad={() => {
+                      setImgLoaded(true);
+                      setImgError(false);
+                    }}
                     onError={() => {
                       setImgLoaded(true);
                       setImgError(true);
                     }}
                     onClick={() => setLightboxOpen(true)}
-                    className={`max-h-[480px] w-full object-contain transition-all duration-300 cursor-zoom-in ${
-                      imgLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-98'
+                    className={`max-h-[480px] w-full object-contain transition-opacity duration-200 cursor-zoom-in ${
+                      imgError ? 'hidden' : 'opacity-100'
                     }`}
                   />
                 )}
